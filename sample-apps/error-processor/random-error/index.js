@@ -37,7 +37,16 @@ var myFunction = async function(event, context) {
     throw error
   }
 
-  return await lambda.invoke({ FunctionName: context.functionName, Payload: JSON.stringify(event)}).promise()
+  var invokeResponse = await lambda.invoke({ FunctionName: context.functionName, Payload: JSON.stringify(event)}).promise()
+  console.log("INVOKE RESPONSE: " + JSON.stringify(invokeResponse))
+  var response = JSON.parse(invokeResponse.Payload)
+  if ( !response.depth ){
+    response.depth = 2
+  }
+  else {
+    response.depth +=1
+  }
+  return response
 }
 
 exports.handler = myFunction
