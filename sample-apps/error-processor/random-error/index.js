@@ -27,18 +27,19 @@ var myFunction = async function(event, context) {
   
   event["current-depth"] += 1
   if (event["max-depth"] == event["current-depth"]) {
-    var error = new Error("Maximum depth reached")
+    var error = new Error("Maximum depth reached: " + event["max-depth"])
+    error.name = "function.MaxDepthError"
     console.log("ERROR")
     throw error
   }
   if (roll1 == roll2) {
-    var error = new Error("Bad roll")
+    var error = new Error(`Doubles rolled: ${roll1} & ${roll2}`)
+    error.name= "function.DoublesRolledError"
     console.log("ERROR")
     throw error
   }
 
   var invokeResponse = await lambda.invoke({ FunctionName: context.functionName, Payload: JSON.stringify(event)}).promise()
-  console.log("INVOKE RESPONSE: " + JSON.stringify(invokeResponse))
   var response = JSON.parse(invokeResponse.Payload)
   if ( !response.depth ){
     response.depth = 2
