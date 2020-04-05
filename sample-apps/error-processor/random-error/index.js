@@ -19,11 +19,18 @@ var myFunction = async function(event, context) {
 
   AWSXRay.captureFunc('annotations', function(subsegment){
     subsegment.addAnnotation('name', name)
-    //subsegment.addAnnotation('roll1', roll1)
-    //subsegment.addAnnotation('roll2', roll2)
+    subsegment.addAnnotation('roll1', roll1)
+    subsegment.addAnnotation('roll2', roll2)
     subsegment.addAnnotation('request_id', context.awsRequestId)
   })
 
+  
+  event["current-depth"] += 1
+  if (event["max-depth"] == event["current-depth"]) {
+    var error = new Error("Maximum depth reached")
+    console.log("ERROR")
+    throw error
+  }
   if (roll1 == roll2) {
     var error = new Error("Bad roll")
     console.log("ERROR")
