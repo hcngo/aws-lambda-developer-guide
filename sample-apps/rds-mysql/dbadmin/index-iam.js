@@ -1,6 +1,6 @@
 const AWSXRay = require('aws-xray-sdk-core')
 const captureMySQL = require('aws-xray-sdk-mysql')
-const mysql = captureMySQL(require('mysql'))
+const mysql = captureMySQL(require('mysql2'))
 const AWS = require('aws-sdk')
 const username = process.env.databaseUser
 const password = process.env.databasePassword
@@ -9,13 +9,28 @@ const host = process.env.databaseHost
 
 exports.handler = async (event) => {
     let token = signer.getAuthToken({ username: username })
-    var connection = mysql.createConnection({
-      host     : host,
-      user     : username,
-      password : token,
-      database : 'lambdadb'
-    })
-    console.log("## PASSWORD: " + token)
+    
+    let connectionConfig = {
+        host     : host,
+        user     : username,
+        password : token,
+        database : 'lambdadb',
+        ssl: { rejectUnauthorized: false },
+        authSwitchHandler: function ({ pluginName, pluginData }, cb) {
+            console.log("Setting new auth handler.");
+        }
+    };
+
+    //Adding the mysql_clear_password handler
+    connectionConfig.authSwitchHandler = (data, cb) => {
+        if (data.pluginName === 'mysql_clear_password') {
+            console.log("pluginName: " + data.pluginName);
+            let password = token + '\0';
+            cb(null, Buffer.from(password));
+        }
+    }
+
+    var connection = mysql.createConnection(connectionConfig)
     var query = event.query
     var result
     connection.connect()
@@ -45,5 +60,3 @@ var signer = new AWS.RDS.Signer({
     port: 3306,
     username: username
   });
-
-
