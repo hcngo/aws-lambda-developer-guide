@@ -34,6 +34,7 @@ Resources:
       Engine: MySQL
       EngineVersion: 5.7.26
       MasterUsername: !Ref 'databaseUser'
+      EnableIAMDatabaseAuthentication: true
       MasterUserPassword: '{{resolve:secretsmanager:rds-mysql-admin:SecretString:password}}'
       DeletionProtection: true
       MultiAZ: true
