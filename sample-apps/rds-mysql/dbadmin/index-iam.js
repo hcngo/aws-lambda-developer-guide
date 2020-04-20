@@ -4,8 +4,8 @@ const mysql = captureMySQL(require('mysql2'))
 const AWS = require('aws-sdk')
 const username = process.env.databaseUser
 const host = process.env.databaseHost
+const database = process.env.databaseName
 const region = process.env.AWS_REGION
-const database = 'lambdadb'
 const sqlport = 3306
 
 const signer = new AWS.RDS.Signer({
