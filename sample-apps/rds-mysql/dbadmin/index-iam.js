@@ -5,31 +5,32 @@ const AWS = require('aws-sdk')
 const username = process.env.databaseUser
 const password = process.env.databasePassword
 const host = process.env.databaseHost
-//const host = 'PROXY_HOST.REGION.rds.amazonaws.com'
+const region = process.env.AWS_REGION
+const sqlport = 3306
+
+const signer = new AWS.RDS.Signer({
+  region: region,
+  hostname: host,
+  port: sqlport,
+  username: username
+})
+const rdsSignerAuth = () => () => {
+  return signer.getAuthToken({
+    username,
+    region,
+    host,
+    port: sqlport
+  })
+}
 
 exports.handler = async (event) => {
-    let token = signer.getAuthToken({ username: username })
-    
     let connectionConfig = {
         host     : host,
         user     : username,
-        password : token,
         database : 'lambdadb',
-        ssl: { rejectUnauthorized: false },
-        authSwitchHandler: function ({ pluginName, pluginData }, cb) {
-            console.log("Setting new auth handler.");
-        }
-    };
-
-    //Adding the mysql_clear_password handler
-    connectionConfig.authSwitchHandler = (data, cb) => {
-        if (data.pluginName === 'mysql_clear_password') {
-            console.log("pluginName: " + data.pluginName);
-            let password = token + '\0';
-            cb(null, Buffer.from(password));
-        }
+        ssl: 'Amazon RDS',
+        authPlugins: { mysql_clear_password: rdsSignerAuth }
     }
-
     var connection = mysql.createConnection(connectionConfig)
     var query = event.query
     var result
@@ -54,9 +55,3 @@ exports.handler = async (event) => {
         })
     })
 }
-var signer = new AWS.RDS.Signer({
-    region: process.env.AWS_REGION,
-    hostname: host,
-    port: 3306,
-    username: username
-  });
